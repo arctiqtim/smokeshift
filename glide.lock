@@ -1,0 +1,12 @@
+hash: 6d476fcee572f12bb89e7e7da4c6ce9e3386ca396b714d8f9c6a5bedb2d886d8
+updated: 2016-09-28T14:19:08.326951916-04:00
+imports:
+- name: github.com/fatih/color
+  version: 87d4004f2ab62d0d255e0a38f1680aa534549fe3
+- name: github.com/spf13/cobra
+  version: 9c28e4bbd74e5c3ed7aacbc552b2cab7cfdfe744
+  subpackages:
+  - cobra
+- name: gopkg.in/yaml.v2
+  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
+testImports: []
