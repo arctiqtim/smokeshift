@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/apprenda/kismatic-platform/pkg/util"
+	"github.com/apprenda/kuberang/pkg/util"
 )
 
 // Set via linker flag

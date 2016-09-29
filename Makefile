@@ -22,8 +22,6 @@ clean:
 test: vendor
 	go test ./cmd/... ./pkg/... $(TEST_OPTS)
 
-integration-test: dist just-integration-test
-
 vendor: tools/glide
 	./tools/glide install
 
@@ -33,6 +31,3 @@ tools/glide:
 	mv tools/$(GLIDE_GOOS)-$(HOST_GOARCH)/glide tools/glide
 	rm -r tools/$(GLIDE_GOOS)-$(HOST_GOARCH)
 
-dist: build
-	mkdir -p out
-	cp bin/kuberang out
