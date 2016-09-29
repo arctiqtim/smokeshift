@@ -21,6 +21,8 @@ Adding -o json will return a parsable json blob instead of a pretty string repor
 - A working kubectl (or all you'll get is a message complaining about kubectl)
 - Access to a Docker registry with busybox and nginx images
 
+### Note: 
+
 # Developer notes
 ### Pre-requisites
 - Go 1.7 installed

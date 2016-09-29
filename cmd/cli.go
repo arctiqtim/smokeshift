@@ -1,8 +1,9 @@
-package kuberang
+package main
 
 import (
 	"io"
 
+	"github.com/apprenda/kuberang/pkg/kuberang"
 	"github.com/spf13/cobra"
 )
 
@@ -19,5 +20,5 @@ func NewKuberangCommand(version string, in io.Reader, out io.Writer) (*cobra.Com
 }
 
 func doCheckKubernetes(args []string) error {
-    CheckKubernetes()
+	return kuberang.CheckKubernetes()
 }

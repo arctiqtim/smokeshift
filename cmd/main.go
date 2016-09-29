@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 
-	"github.com/apprenda/kismatic-platform/pkg/cli"
 	"github.com/apprenda/kismatic-platform/pkg/util"
 )
 
@@ -11,8 +10,7 @@ import (
 var version string
 
 func main() {
-
-	cmd, err := cli.NewKismaticCommand(version, os.Stdin, os.Stdout)
+	cmd, err := NewKuberangCommand(version, os.Stdin, os.Stdout)
 	if err != nil {
 		util.PrintColor(os.Stderr, util.Red, "Error initializing command: %v\n", err)
 		os.Exit(1)

@@ -12,13 +12,12 @@ ifeq ($(origin GLIDE_GOOS), undefined)
 endif
 
 build: vendor
-	go build "-X main.version=$(VERSION)" ./kuberang
-	GOOS=linux go build -o bin/linux/$(HOST_GOARCH)/kuberang ./cmd/kuberang
-	GOOS=darwin go build -o bin/darwin/$(HOST_GOARCH)/kuberang ./cmd/kuberang
+	go build -o bin/kuberang -ldflags "-X main.version=$(VERSION)" ./cmd
 
 clean:
 	rm -rf bin
 	rm -rf out
+	rm -rf vendor
 
 test: vendor
 	go test ./cmd/... ./pkg/... $(TEST_OPTS)
@@ -34,28 +33,6 @@ tools/glide:
 	mv tools/$(GLIDE_GOOS)-$(HOST_GOARCH)/glide tools/glide
 	rm -r tools/$(GLIDE_GOOS)-$(HOST_GOARCH)
 
-vendor-ansible/out:
-	docker build -t apprenda/vendor-ansible -q vendor-ansible
-	docker run --rm -v $(shell pwd)/vendor-ansible/out:/ansible apprenda/vendor-ansible pip install --install-option="--prefix=/ansible" ansible
-
-vendor-cfssl/out:
-	mkdir -p vendor-cfssl/out/
-	curl -L https://pkg.cfssl.org/R1.2/cfssl_linux-amd64 -o vendor-cfssl/out/cfssl_linux-amd64
-	curl -L https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64 -o vendor-cfssl/out/cfssljson_linux-amd64
-	curl -L https://pkg.cfssl.org/R1.2/cfssl_darwin-amd64 -o vendor-cfssl/out/cfssl_darwin-amd64
-	curl -L https://pkg.cfssl.org/R1.2/cfssljson_darwin-amd64 -o vendor-cfssl/out/cfssljson_darwin-amd64
-
-dist: vendor-ansible/out vendor-cfssl/out build
+dist: build
 	mkdir -p out
-	cp bin/kismatic out
-	mkdir -p out/ansible
-	cp -r vendor-ansible/out/* out/ansible
-	rm -rf out/ansible/playbooks
-	cp -r ansible out/ansible/playbooks
-	mkdir -p out/ansible/playbooks/inspector
-	cp -r bin/inspector/* out/ansible/playbooks/inspector
-	mkdir -p out/cfssl
-	cp -r vendor-cfssl/out/* out/cfssl
-	rm -f out/kismatic.tar.gz
-	tar -cvzf kismatic.tar.gz -C out .
-	mv kismatic.tar.gz out
+	cp bin/kuberang out
