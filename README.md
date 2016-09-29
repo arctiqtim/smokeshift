@@ -1,4 +1,5 @@
 # Kuberang
+[![Build Status](https://snap-ci.com/Jo2EDlfuxqw3C4iQiROImco9nMV0-NhkIhr4w0Fwrsg/build_image)](https://snap-ci.com/apprenda/kuberang/branch/master)
 `kuberang` is a command-line utility for smoke testing a Kubernetes install.
 
 It scales out a pair of services, checks their connectivity, and then scales back in again. Sort of like a boomerang, you know?
