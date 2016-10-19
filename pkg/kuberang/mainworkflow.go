@@ -13,6 +13,7 @@ const NGServiceName = RunPrefix + "nginx"
 const BBDeploymentName = RunPrefix + "busybox"
 const NGDeploymentName = RunPrefix + "nginx"
 const Timeout = 300 //seconds
+const HTTP_Timeout = 1000 * time.Millisecond
 
 func CheckKubernetes() error {
 	if !PrecheckKubectl() ||
@@ -103,19 +104,23 @@ func CheckKubernetes() error {
 	}
 
 	// Check connectivity from current machine (using curl or wget)
-	if _, err := http.Get(NGServiceName); err == nil {
+	// Set Timeout or it could wait forever
+	client := http.Client{
+		Timeout: HTTP_Timeout,
+	}
+	if _, err := client.Get(NGServiceName); err == nil {
 		util.PrettyPrintOk(os.Stdout, "Accessed Nginx service via DNS "+NGServiceName+" from this node")
 	} else {
 		util.PrettyPrintErr(os.Stdout, "Accessed Nginx service via DNS "+NGServiceName+" from this node")
 	}
 	for _, podIP := range podIPs {
-		if _, err := http.Get(podIP); err == nil {
+		if _, err := client.Get(podIP); err == nil {
 			util.PrettyPrintOk(os.Stdout, "Accessed Nginx pod at "+podIP+" from this node")
 		} else {
 			util.PrettyPrintErr(os.Stdout, "Accessed Nginx pod at "+podIP+" from this node")
 		}
 	}
-	if _, err := http.Get("http://google.com/"); err == nil {
+	if _, err := client.Get("http://google.com/"); err == nil {
 		util.PrettyPrintOk(os.Stdout, "Accessed Google.com from this node")
 	} else {
 		util.PrettyPrintErr(os.Stdout, "Accessed Google.com from this node")
