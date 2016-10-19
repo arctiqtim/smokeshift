@@ -24,21 +24,24 @@ func CheckKubernetes() error {
 	}
 
 	// Scale out busybox
-
+	busyboxCount := int64(1)
 	if ko := RunKubectl("run", BBDeploymentName, "--image=busybox", "--", "sleep", "3600"); !ko.Success {
 		util.PrettyPrintErr(os.Stdout, "Issued BusyBox start request")
 	} else {
 		util.PrettyPrintOk(os.Stdout, "Issued BusyBox start request")
 	}
 	// Scale out nginx
-	if ko := RunPod(NGDeploymentName, "nginx", 2); !ko.Success {
+	// Try to run a Pod on each Node,
+	// This scheduling is not guaranteed but it gets close
+	nginxCount := int64(RunGetNodes().NodeCount())
+	if ko := RunPod(NGDeploymentName, "nginx", nginxCount); !ko.Success {
 		util.PrettyPrintErr(os.Stdout, "Issued Nginx start request")
 	} else {
 		util.PrettyPrintOk(os.Stdout, "Issued Nginx start request")
 	}
 
 	// Check for both
-	if !WaitForDeployments() {
+	if !WaitForDeployments(busyboxCount, nginxCount) {
 		return nil
 	}
 
@@ -170,20 +173,20 @@ func PrecheckDeployments() bool {
 	return ret
 }
 
-func CheckDeployments() bool {
+func CheckDeployments(busbyboxCount, nginxCount int64) bool {
 	ret := true
-	if ko := RunGetDeployment(BBDeploymentName); !ko.Success || ko.ObservedReplicaCount() != 1 {
+	if ko := RunGetDeployment(BBDeploymentName); !ko.Success || ko.ObservedReplicaCount() != busbyboxCount {
 		ret = false
 	}
-	if ko := RunGetDeployment(NGDeploymentName); !ko.Success || ko.ObservedReplicaCount() != 2 {
+	if ko := RunGetDeployment(NGDeploymentName); !ko.Success || ko.ObservedReplicaCount() != nginxCount {
 		ret = false
 	}
 	return ret
 }
 
-func WaitForDeployments() bool {
+func WaitForDeployments(busbyboxCount, nginxCount int64) bool {
 	for i := 0; i < Timeout; i++ {
-		if CheckDeployments() {
+		if CheckDeployments(busbyboxCount, nginxCount) {
 			util.PrettyPrintOk(os.Stdout, "Both deployments completed successfully within timeout")
 			return true
 		}
