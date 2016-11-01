@@ -25,7 +25,7 @@ func CheckKubernetes() error {
 
 	// Scale out busybox
 	busyboxCount := int64(1)
-	if ko := RunKubectl("run", BBDeploymentName, "--image=busybox", "--", "sleep", "3600"); !ko.Success {
+	if ko := RunKubectl("run", BBDeploymentName, "--image=busybox", "--image-pull-policy=IfNotPresent", "--", "sleep", "3600"); !ko.Success {
 		util.PrettyPrintErr(os.Stdout, "Issued BusyBox start request")
 	} else {
 		util.PrettyPrintOk(os.Stdout, "Issued BusyBox start request")
