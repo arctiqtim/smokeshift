@@ -43,7 +43,11 @@ func RunGetDeployment(name string) KubeOutput {
 }
 
 func RunPod(name string, image string, count int64) KubeOutput {
-	return RunKubectl("run", name, "--image="+image, "--replicas="+strconv.FormatInt(count, 10), "-o", "json")
+	return RunKubectl("run", name, "--image="+image, "--image-pull-policy=IfNotPresent", "--replicas="+strconv.FormatInt(count, 10), "-o", "json")
+}
+
+func RunGetNodes() KubeOutput {
+	return RunKubectl("get", "nodes", "-o", "json")
 }
 
 func (ko KubeOutput) ObservedReplicaCount() int64 {
@@ -104,4 +108,14 @@ type PodsResponse struct {
 			PodIP string `json:"podIP"`
 		} `json:"status"`
 	} `json:"items"`
+}
+
+type NodeResponse struct {
+	Items []interface{} `json:"items"`
+}
+
+func (ko KubeOutput) NodeCount() int {
+	resp := NodeResponse{}
+	json.Unmarshal(ko.RawOut, &resp)
+	return len(resp.Items)
 }

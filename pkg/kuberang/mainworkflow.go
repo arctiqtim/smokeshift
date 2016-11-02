@@ -13,6 +13,7 @@ const NGServiceName = RunPrefix + "nginx"
 const BBDeploymentName = RunPrefix + "busybox"
 const NGDeploymentName = RunPrefix + "nginx"
 const Timeout = 300 //seconds
+const HTTP_Timeout = 1000 * time.Millisecond
 
 func CheckKubernetes() error {
 	if !PrecheckKubectl() ||
@@ -23,21 +24,24 @@ func CheckKubernetes() error {
 	}
 
 	// Scale out busybox
-
-	if ko := RunKubectl("run", BBDeploymentName, "--image=busybox", "--", "sleep", "3600"); !ko.Success {
+	busyboxCount := int64(1)
+	if ko := RunKubectl("run", BBDeploymentName, "--image=busybox", "--image-pull-policy=IfNotPresent", "--", "sleep", "3600"); !ko.Success {
 		util.PrettyPrintErr(os.Stdout, "Issued BusyBox start request")
 	} else {
 		util.PrettyPrintOk(os.Stdout, "Issued BusyBox start request")
 	}
 	// Scale out nginx
-	if ko := RunPod(NGDeploymentName, "nginx", 2); !ko.Success {
+	// Try to run a Pod on each Node,
+	// This scheduling is not guaranteed but it gets close
+	nginxCount := int64(RunGetNodes().NodeCount())
+	if ko := RunPod(NGDeploymentName, "nginx", nginxCount); !ko.Success {
 		util.PrettyPrintErr(os.Stdout, "Issued Nginx start request")
 	} else {
 		util.PrettyPrintOk(os.Stdout, "Issued Nginx start request")
 	}
 
 	// Check for both
-	if !WaitForDeployments() {
+	if !WaitForDeployments(busyboxCount, nginxCount) {
 		return nil
 	}
 
@@ -103,19 +107,23 @@ func CheckKubernetes() error {
 	}
 
 	// Check connectivity from current machine (using curl or wget)
-	if _, err := http.Get(NGServiceName); err == nil {
+	// Set Timeout or it could wait forever
+	client := http.Client{
+		Timeout: HTTP_Timeout,
+	}
+	if _, err := client.Get(NGServiceName); err == nil {
 		util.PrettyPrintOk(os.Stdout, "Accessed Nginx service via DNS "+NGServiceName+" from this node")
 	} else {
 		util.PrettyPrintErr(os.Stdout, "Accessed Nginx service via DNS "+NGServiceName+" from this node")
 	}
 	for _, podIP := range podIPs {
-		if _, err := http.Get(podIP); err == nil {
+		if _, err := client.Get(podIP); err == nil {
 			util.PrettyPrintOk(os.Stdout, "Accessed Nginx pod at "+podIP+" from this node")
 		} else {
 			util.PrettyPrintErr(os.Stdout, "Accessed Nginx pod at "+podIP+" from this node")
 		}
 	}
-	if _, err := http.Get("http://google.com/"); err == nil {
+	if _, err := client.Get("http://google.com/"); err == nil {
 		util.PrettyPrintOk(os.Stdout, "Accessed Google.com from this node")
 	} else {
 		util.PrettyPrintErr(os.Stdout, "Accessed Google.com from this node")
@@ -165,20 +173,20 @@ func PrecheckDeployments() bool {
 	return ret
 }
 
-func CheckDeployments() bool {
+func CheckDeployments(busbyboxCount, nginxCount int64) bool {
 	ret := true
-	if ko := RunGetDeployment(BBDeploymentName); !ko.Success || ko.ObservedReplicaCount() != 1 {
+	if ko := RunGetDeployment(BBDeploymentName); !ko.Success || ko.ObservedReplicaCount() != busbyboxCount {
 		ret = false
 	}
-	if ko := RunGetDeployment(NGDeploymentName); !ko.Success || ko.ObservedReplicaCount() != 2 {
+	if ko := RunGetDeployment(NGDeploymentName); !ko.Success || ko.ObservedReplicaCount() != nginxCount {
 		ret = false
 	}
 	return ret
 }
 
-func WaitForDeployments() bool {
+func WaitForDeployments(busbyboxCount, nginxCount int64) bool {
 	for i := 0; i < Timeout; i++ {
-		if CheckDeployments() {
+		if CheckDeployments(busbyboxCount, nginxCount) {
 			util.PrettyPrintOk(os.Stdout, "Both deployments completed successfully within timeout")
 			return true
 		}
