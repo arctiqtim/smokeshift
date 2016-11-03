@@ -4,7 +4,7 @@
 
 It scales out a pair of services, checks their connectivity, and then scales back in again. Sort of like a boomerang, you know?
 
-[Latest Build](https://kismatic-installer.s3-accelerate.amazonaws.com/latest/kuberang)
+[Latest Build for Linux x86](https://kismatic-installer.s3-accelerate.amazonaws.com/latest/kuberang)
 
 It will tell you if the machine and account from which you run it:
 - Has kubectl installed correctly with access controls
