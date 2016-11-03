@@ -7,12 +7,12 @@ It scales out a pair of services, checks their connectivity, and then scales bac
 [Latest Build for Linux x86](https://kismatic-installer.s3-accelerate.amazonaws.com/latest/kuberang)
 
 It will tell you if the machine and account from which you run it:
-- Has kubectl installed correctly with access controls
-- Has available workers
-- Has working pod & service networks
-- Has working pod <-> pod DNS
-- Has working master(s)
-- Has the ability to access pods and services from the node you run it on.
+* Has kubectl installed correctly with access controls
+* Has available workers
+* Has working pod & service networks
+* Has working pod <-> pod DNS
+* Has working master(s)
+* Has the ability to access pods and services from the node you run it on.
 
 It's suggested that you run `kuberang` from a node OTHER than a worker.
 
@@ -21,10 +21,9 @@ It's suggested that you run `kuberang` from a node OTHER than a worker.
 Adding -o json will return a parsable json blob instead of a pretty string report.
 
 ### Pre-requisites
-- A working kubectl (or all you'll get is a message complaining about kubectl)
-- Access to a Docker registry with busybox and nginx images
-
-### Note: 
+* A working kubectl (or all you'll get is a message complaining about kubectl)
+* Access to a Docker registry with 
+  busybox and nginx images
 
 # Developer notes
 ### Pre-requisites
