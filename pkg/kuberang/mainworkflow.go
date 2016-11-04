@@ -1,27 +1,28 @@
 package kuberang
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/apprenda/kuberang/pkg/util"
 	"errors"
+
+	"github.com/apprenda/kuberang/pkg/util"
 )
 
 const RunPrefix = "kuberang-"
-const NGServiceName = RunPrefix + "nginx"
 const BBDeploymentName = RunPrefix + "busybox"
 const NGDeploymentName = RunPrefix + "nginx"
 const Timeout = 300 //seconds
 const HTTP_Timeout = 1000 * time.Millisecond
 
-
 func CheckKubernetes() error {
+	ngServiceName := nginxServiceName()
 	if !PrecheckKubectl() ||
-		!PrecheckServices() ||
+		!PrecheckServices(ngServiceName) ||
 		!PrecheckDeployments() {
-		PowerDown()
+		PowerDown(ngServiceName)
 		return errors.New("Pre-conditions failed; must clean up before we can smoke test")
 	}
 
@@ -52,7 +53,7 @@ func CheckKubernetes() error {
 	}
 
 	// Add service
-	if ko := RunKubectl("expose", "deployment", NGDeploymentName, "--name="+NGServiceName, "--port=80"); !ko.Success {
+	if ko := RunKubectl("expose", "deployment", NGDeploymentName, "--name="+ngServiceName, "--port=80"); !ko.Success {
 		util.PrettyPrintErr(os.Stdout, "Issued expose Nginx service request")
 		success = false
 	} else {
@@ -72,7 +73,7 @@ func CheckKubernetes() error {
 		success = false
 	}
 
-	if ko := RunGetService(NGServiceName); ko.Success {
+	if ko := RunGetService(ngServiceName); ko.Success {
 		serviceIP = ko.ServiceCluserIP()
 		util.PrettyPrintOk(os.Stdout, "Grab nginx service ip address")
 	} else {
@@ -97,12 +98,13 @@ func CheckKubernetes() error {
 		util.PrettyPrintErr(os.Stdout, "Accessed Nginx service at "+serviceIP+" from BusyBox", ko.CombinedOut, busyboxPodName)
 		success = false
 	}
-	if ko := RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", NGServiceName); busyboxPodName == "" || ko.Success {
-		util.PrettyPrintOk(os.Stdout, "Accessed Nginx service via DNS "+NGServiceName+" from BusyBox")
+	if ko := RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", ngServiceName); busyboxPodName == "" || ko.Success {
+		util.PrettyPrintOk(os.Stdout, "Accessed Nginx service via DNS "+ngServiceName+" from BusyBox")
 	} else {
-		util.PrettyPrintErr(os.Stdout, "Accessed Nginx service via DNS "+NGServiceName+" from BusyBox")
+		util.PrettyPrintErr(os.Stdout, "Accessed Nginx service via DNS "+ngServiceName+" from BusyBox")
 		success = false
 	}
+
 	for _, podIP := range podIPs {
 		if ko := RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", podIP); busyboxPodName == "" || ko.Success {
 			util.PrettyPrintOk(os.Stdout, "Accessed Nginx pod at "+podIP+" from BusyBox")
@@ -124,10 +126,10 @@ func CheckKubernetes() error {
 	client := http.Client{
 		Timeout: HTTP_Timeout,
 	}
-	if _, err := client.Get(NGServiceName); err == nil {
-		util.PrettyPrintOk(os.Stdout, "Accessed Nginx service via DNS "+NGServiceName+" from this node")
+	if _, err := client.Get(ngServiceName); err == nil {
+		util.PrettyPrintOk(os.Stdout, "Accessed Nginx service via DNS "+ngServiceName+" from this node")
 	} else {
-		util.PrettyPrintErrorIgnored(os.Stdout, "Accessed Nginx service via DNS "+NGServiceName+" from this node")
+		util.PrettyPrintErrorIgnored(os.Stdout, "Accessed Nginx service via DNS "+ngServiceName+" from this node")
 	}
 	for _, podIP := range podIPs {
 		if _, err := client.Get(podIP); err == nil {
@@ -142,7 +144,7 @@ func CheckKubernetes() error {
 		util.PrettyPrintErrorIgnored(os.Stdout, "Accessed Google.com from this node")
 	}
 
-	PowerDown()
+	PowerDown(ngServiceName)
 
 	if success {
 		return nil
@@ -161,9 +163,9 @@ func PrecheckKubectl() bool {
 	return ret
 }
 
-func PrecheckServices() bool {
+func PrecheckServices(nginxServiceName string) bool {
 	ret := true
-	if ko := RunGetService(NGServiceName); ko.Success {
+	if ko := RunGetService(nginxServiceName); ko.Success {
 		util.PrettyPrintErr(os.Stdout, "Nginx service does not already exist")
 		ret = false
 	} else {
@@ -212,9 +214,9 @@ func WaitForDeployments(busbyboxCount, nginxCount int64) bool {
 	return false
 }
 
-func PowerDown() {
+func PowerDown(nginxServiceName string) {
 	// Power down service
-	if ko := RunKubectl("delete", "service", NGServiceName); ko.Success {
+	if ko := RunKubectl("delete", "service", nginxServiceName); ko.Success {
 		util.PrettyPrintOk(os.Stdout, "Powered down Nginx service")
 	} else {
 		util.PrettyPrintErr(os.Stdout, "Powered down Nginx service")
@@ -231,4 +233,8 @@ func PowerDown() {
 	} else {
 		util.PrettyPrintErr(os.Stdout, "Powered down Nginx deployment")
 	}
+}
+
+func nginxServiceName() string {
+	return fmt.Sprintf("%s-%d", RunPrefix+"nginx", time.Now().UnixNano())
 }
