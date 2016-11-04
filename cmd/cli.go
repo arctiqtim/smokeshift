@@ -8,7 +8,7 @@ import (
 )
 
 // NewKismaticCommand creates the kismatic command
-func NewKuberangCommand(version string, in io.Reader, out io.Writer) (*cobra.Command, error) {
+func NewKuberangCommand(version string, in io.Reader, out io.Writer) (*cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "kuberang",
 		Short: "kuberang tests your kubernetes cluster using kubectl",
@@ -16,7 +16,7 @@ func NewKuberangCommand(version string, in io.Reader, out io.Writer) (*cobra.Com
 			return doCheckKubernetes(args)
 		},
 	}
-	return cmd, nil
+	return cmd
 }
 
 func doCheckKubernetes(args []string) error {
