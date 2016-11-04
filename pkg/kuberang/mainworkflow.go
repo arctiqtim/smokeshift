@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/apprenda/kuberang/pkg/util"
+	"errors"
 )
 
 const RunPrefix = "kuberang-"
@@ -15,18 +16,22 @@ const NGDeploymentName = RunPrefix + "nginx"
 const Timeout = 300 //seconds
 const HTTP_Timeout = 1000 * time.Millisecond
 
+
 func CheckKubernetes() error {
 	if !PrecheckKubectl() ||
 		!PrecheckServices() ||
 		!PrecheckDeployments() {
 		PowerDown()
-		return nil
+		return errors.New("Pre-conditions failed; must clean up before we can smoke test")
 	}
+
+	success := true
 
 	// Scale out busybox
 	busyboxCount := int64(1)
 	if ko := RunKubectl("run", BBDeploymentName, "--image=busybox", "--image-pull-policy=IfNotPresent", "--", "sleep", "3600"); !ko.Success {
 		util.PrettyPrintErr(os.Stdout, "Issued BusyBox start request")
+		success = false
 	} else {
 		util.PrettyPrintOk(os.Stdout, "Issued BusyBox start request")
 	}
@@ -36,6 +41,7 @@ func CheckKubernetes() error {
 	nginxCount := int64(RunGetNodes().NodeCount())
 	if ko := RunPod(NGDeploymentName, "nginx", nginxCount); !ko.Success {
 		util.PrettyPrintErr(os.Stdout, "Issued Nginx start request")
+		success = false
 	} else {
 		util.PrettyPrintOk(os.Stdout, "Issued Nginx start request")
 	}
@@ -48,6 +54,7 @@ func CheckKubernetes() error {
 	// Add service
 	if ko := RunKubectl("expose", "deployment", NGDeploymentName, "--name="+NGServiceName, "--port=80"); !ko.Success {
 		util.PrettyPrintErr(os.Stdout, "Issued expose Nginx service request")
+		success = false
 	} else {
 		util.PrettyPrintOk(os.Stdout, "Issued expose Nginx service request")
 	}
@@ -62,6 +69,7 @@ func CheckKubernetes() error {
 	} else {
 		podIPs = make([]string, 0)
 		util.PrettyPrintErr(os.Stdout, "Grab nginx pod ip addresses")
+		success = false
 	}
 
 	if ko := RunGetService(NGServiceName); ko.Success {
@@ -70,6 +78,7 @@ func CheckKubernetes() error {
 	} else {
 		serviceIP = ""
 		util.PrettyPrintErr(os.Stdout, "Grab nginx service ip address")
+		success = false
 	}
 
 	if ko := RunKubectl("get", "pods", "-l", "run=kuberang-busybox", "-o", "json"); ko.Success {
@@ -78,6 +87,7 @@ func CheckKubernetes() error {
 	} else {
 		busyboxPodName = ""
 		util.PrettyPrintErr(os.Stdout, "Grab BusyBox pod name")
+		success = false
 	}
 
 	// Check connectivity between pods (using busybox)
@@ -85,17 +95,20 @@ func CheckKubernetes() error {
 		util.PrettyPrintOk(os.Stdout, "Accessed Nginx service at "+serviceIP+" from BusyBox")
 	} else {
 		util.PrettyPrintErr(os.Stdout, "Accessed Nginx service at "+serviceIP+" from BusyBox", ko.CombinedOut, busyboxPodName)
+		success = false
 	}
 	if ko := RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", NGServiceName); busyboxPodName == "" || ko.Success {
 		util.PrettyPrintOk(os.Stdout, "Accessed Nginx service via DNS "+NGServiceName+" from BusyBox")
 	} else {
 		util.PrettyPrintErr(os.Stdout, "Accessed Nginx service via DNS "+NGServiceName+" from BusyBox")
+		success = false
 	}
 	for _, podIP := range podIPs {
 		if ko := RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", podIP); busyboxPodName == "" || ko.Success {
 			util.PrettyPrintOk(os.Stdout, "Accessed Nginx pod at "+podIP+" from BusyBox")
 		} else {
 			util.PrettyPrintErr(os.Stdout, "Accessed Nginx pod at "+podIP+" from BusyBox")
+			success = false
 		}
 	}
 
@@ -103,7 +116,7 @@ func CheckKubernetes() error {
 	if ko := RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", "Google.com"); busyboxPodName == "" || ko.Success {
 		util.PrettyPrintOk(os.Stdout, "Accessed Google.com from BusyBox")
 	} else {
-		util.PrettyPrintErr(os.Stdout, "Accessed Google.com from BusyBox")
+		util.PrettyPrintErrorIgnored(os.Stdout, "Accessed Google.com from BusyBox")
 	}
 
 	// Check connectivity from current machine (using curl or wget)
@@ -114,24 +127,27 @@ func CheckKubernetes() error {
 	if _, err := client.Get(NGServiceName); err == nil {
 		util.PrettyPrintOk(os.Stdout, "Accessed Nginx service via DNS "+NGServiceName+" from this node")
 	} else {
-		util.PrettyPrintErr(os.Stdout, "Accessed Nginx service via DNS "+NGServiceName+" from this node")
+		util.PrettyPrintErrorIgnored(os.Stdout, "Accessed Nginx service via DNS "+NGServiceName+" from this node")
 	}
 	for _, podIP := range podIPs {
 		if _, err := client.Get(podIP); err == nil {
 			util.PrettyPrintOk(os.Stdout, "Accessed Nginx pod at "+podIP+" from this node")
 		} else {
-			util.PrettyPrintErr(os.Stdout, "Accessed Nginx pod at "+podIP+" from this node")
+			util.PrettyPrintErrorIgnored(os.Stdout, "Accessed Nginx pod at "+podIP+" from this node")
 		}
 	}
 	if _, err := client.Get("http://google.com/"); err == nil {
 		util.PrettyPrintOk(os.Stdout, "Accessed Google.com from this node")
 	} else {
-		util.PrettyPrintErr(os.Stdout, "Accessed Google.com from this node")
+		util.PrettyPrintErrorIgnored(os.Stdout, "Accessed Google.com from this node")
 	}
 
 	PowerDown()
 
-	return nil
+	if success {
+		return nil
+	}
+	return errors.New("One or more required steps failed")
 }
 
 func PrecheckKubectl() bool {
