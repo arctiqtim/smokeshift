@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os/exec"
 	"strconv"
+
+	"github.com/apprenda/kuberang/pkg/config"
 )
 
 type KubeOutput struct {
@@ -14,6 +16,10 @@ type KubeOutput struct {
 }
 
 func RunKubectl(args ...string) KubeOutput {
+	if config.Namespace != "" {
+		args = append([]string{"--namespace=" + config.Namespace}, args...)
+	}
+
 	kubeCmd := exec.Command("kubectl", args...)
 	bytes, err := kubeCmd.CombinedOutput()
 	if err != nil {
