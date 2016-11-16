@@ -48,6 +48,10 @@ func RunGetDeployment(name string) KubeOutput {
 	return RunKubectl("get", "deployment", name, "-o", "json")
 }
 
+func RunGetNamespace(name string) KubeOutput {
+	return RunKubectl("get", "namespace", name, "-o", "json")
+}
+
 func RunPod(name string, image string, count int64) KubeOutput {
 	return RunKubectl("run", name, "--image="+image, "--image-pull-policy=IfNotPresent", "--replicas="+strconv.FormatInt(count, 10), "-o", "json")
 }
@@ -124,4 +128,16 @@ func (ko KubeOutput) NodeCount() int {
 	resp := NodeResponse{}
 	json.Unmarshal(ko.RawOut, &resp)
 	return len(resp.Items)
+}
+
+func (ko KubeOutput) NamespaceStatus() string {
+	resp := NamespaceResponse{}
+	json.Unmarshal(ko.RawOut, &resp)
+	return resp.Status.Phase
+}
+
+type NamespaceResponse struct {
+	Status struct {
+		Phase string `json:"phase"`
+	} `json:"status"`
 }
