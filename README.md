@@ -9,6 +9,7 @@ It scales out a pair of services, checks their connectivity, and then scales bac
 
 It will tell you if the machine and account from which you run it:
 * Has kubectl installed correctly with access controls
+* Has active kubernetes namespace (if specified)
 * Has available workers
 * Has working pod & service networks
 * Has working pod <-> pod DNS
@@ -25,6 +26,19 @@ Adding -o json will return a parsable json blob instead of a pretty string repor
 * A working kubectl (or all you'll get is a message complaining about kubectl)
 * Access to a Docker registry with 
   busybox and nginx images
+
+### Usage
+
+```
+$ kuberang --help
+kuberang tests your kubernetes cluster using kubectl
+
+Usage:
+  kuberang [flags]
+
+Flags:
+  -n, --namespace string   Kubernetes namespace in which kuberang will operate. Defaults to 'default' if not specified.
+```
 
 # Developer notes
 ### Pre-requisites
