@@ -8,6 +8,7 @@ import (
 
 	"errors"
 
+	"github.com/apprenda/kuberang/pkg/config"
 	"github.com/apprenda/kuberang/pkg/util"
 )
 
@@ -20,6 +21,7 @@ const HTTP_Timeout = 1000 * time.Millisecond
 func CheckKubernetes() error {
 	ngServiceName := nginxServiceName()
 	if !PrecheckKubectl() ||
+		!PrecheckNamespace() ||
 		!PrecheckServices(ngServiceName) ||
 		!PrecheckDeployments() {
 		PowerDown(ngServiceName)
@@ -187,6 +189,19 @@ func PrecheckDeployments() bool {
 		ret = false
 	} else {
 		util.PrettyPrintOk(os.Stdout, "Nginx service does not already exist")
+	}
+	return ret
+}
+
+func PrecheckNamespace() bool {
+	ret := true
+	if config.Namespace != "" {
+		if ko := RunGetNamespace(config.Namespace); !ko.Success || ko.NamespaceStatus() != "Active" {
+			util.PrettyPrintErr(os.Stdout, "Configured kubernetes namespace `" + config.Namespace + "` exists")
+			ret = false
+		} else {
+			util.PrettyPrintOk(os.Stdout, "Configured kubernetes namespace `" + config.Namespace + "` exists")
+		}
 	}
 	return ret
 }
