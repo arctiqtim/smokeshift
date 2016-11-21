@@ -95,7 +95,7 @@ func CheckKubernetes() error {
 	if ko := RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", serviceIP); busyboxPodName == "" || ko.Success {
 		util.PrettyPrintOk(os.Stdout, "Accessed Nginx service at "+serviceIP+" from BusyBox")
 	} else {
-		util.PrettyPrintErr(os.Stdout, "Accessed Nginx service at "+serviceIP+" from BusyBox", ko.CombinedOut, busyboxPodName)
+		util.PrettyPrintErr(os.Stdout, "Accessed Nginx service at "+serviceIP+" from BusyBox")
 		success = false
 	}
 	if ko := RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", ngServiceName); busyboxPodName == "" || ko.Success {
