@@ -126,13 +126,13 @@ func CheckKubernetes() error {
 	client := http.Client{
 		Timeout: HTTP_Timeout,
 	}
-	if _, err := client.Get(ngServiceName); err == nil {
+	if _, err := client.Get("http://" + ngServiceName); err == nil {
 		util.PrettyPrintOk(os.Stdout, "Accessed Nginx service via DNS "+ngServiceName+" from this node")
 	} else {
 		util.PrettyPrintErrorIgnored(os.Stdout, "Accessed Nginx service via DNS "+ngServiceName+" from this node")
 	}
 	for _, podIP := range podIPs {
-		if _, err := client.Get(podIP); err == nil {
+		if _, err := client.Get("http://" + podIP); err == nil {
 			util.PrettyPrintOk(os.Stdout, "Accessed Nginx pod at "+podIP+" from this node")
 		} else {
 			util.PrettyPrintErrorIgnored(os.Stdout, "Accessed Nginx pod at "+podIP+" from this node")
