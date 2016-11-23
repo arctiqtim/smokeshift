@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os/exec"
 	"strconv"
+
+	"github.com/apprenda/kuberang/pkg/config"
 )
 
 type KubeOutput struct {
@@ -14,6 +16,10 @@ type KubeOutput struct {
 }
 
 func RunKubectl(args ...string) KubeOutput {
+	if config.Namespace != "" {
+		args = append([]string{"--namespace=" + config.Namespace}, args...)
+	}
+
 	kubeCmd := exec.Command("kubectl", args...)
 	bytes, err := kubeCmd.CombinedOutput()
 	if err != nil {
@@ -40,6 +46,10 @@ func RunGetPodByImage(name string) KubeOutput {
 
 func RunGetDeployment(name string) KubeOutput {
 	return RunKubectl("get", "deployment", name, "-o", "json")
+}
+
+func RunGetNamespace(name string) KubeOutput {
+	return RunKubectl("get", "namespace", name, "-o", "json")
 }
 
 func RunPod(name string, image string, count int64) KubeOutput {
@@ -118,4 +128,16 @@ func (ko KubeOutput) NodeCount() int {
 	resp := NodeResponse{}
 	json.Unmarshal(ko.RawOut, &resp)
 	return len(resp.Items)
+}
+
+func (ko KubeOutput) NamespaceStatus() string {
+	resp := NamespaceResponse{}
+	json.Unmarshal(ko.RawOut, &resp)
+	return resp.Status.Phase
+}
+
+type NamespaceResponse struct {
+	Status struct {
+		Phase string `json:"phase"`
+	} `json:"status"`
 }

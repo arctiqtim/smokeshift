@@ -448,3 +448,37 @@ const SampleNodeRespones = `
     ]
 }
 `
+
+func TestNamespaceStatus(t *testing.T) {
+    ko := KubeOutput{
+        Success:     true,
+        CombinedOut: SampleNamespaceResponse,
+        RawOut:      []byte(SampleNamespaceResponse),
+    }
+
+    if namespaceStatus := ko.NamespaceStatus(); namespaceStatus != "Active" {
+        t.Errorf("Wrong namespace status, expeted `Active`, got %d", namespaceStatus)
+    }
+}
+
+const SampleNamespaceResponse = `
+{
+    "kind": "Namespace",
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "some-namespace",
+        "selfLink": "/api/v1/namespaces/some-namespace",
+        "uid": "6c0cde5e-ac03-11e6-8d03-e6eb6a2840bc",
+        "resourceVersion": "79200",
+        "creationTimestamp": "2016-11-16T13:48:57Z"
+    },
+    "spec": {
+        "finalizers": [
+            "kubernetes"
+        ]
+    },
+    "status": {
+        "phase": "Active"
+    }
+}
+`

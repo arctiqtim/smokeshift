@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 
+	"github.com/apprenda/kuberang/pkg/config"
 	"github.com/apprenda/kuberang/pkg/kuberang"
 	"github.com/spf13/cobra"
 )
@@ -18,6 +19,10 @@ func NewKuberangCommand(version string, in io.Reader, out io.Writer) *cobra.Comm
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
+
+	cmd.PersistentFlags().StringVarP(&config.Namespace, "namespace", "n", "", 
+		"Kubernetes namespace in which kuberang will operate. Defaults to 'default' if not specified.")
+
 	return cmd
 }
 
