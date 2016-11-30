@@ -9,8 +9,8 @@ func TestNodeCount(t *testing.T) {
 		CombinedOut: SampleNodeRespones,
 		RawOut:      []byte(SampleNodeRespones),
 	}
-	if nodesCount := ko.NodeCount(); nodesCount != 4 {
-		t.Errorf("Wrong number of nodes, expeted 4, got %d", nodesCount)
+	if nodesCount := ko.NodeCount(); nodesCount != 3 {
+		t.Errorf("Wrong number of nodes, expeted 3, got %d", nodesCount)
 	}
 }
 

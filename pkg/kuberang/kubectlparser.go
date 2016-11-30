@@ -121,13 +121,23 @@ type PodsResponse struct {
 }
 
 type NodeResponse struct {
-	Items []interface{} `json:"items"`
+	Items []struct {
+		Spec struct {
+			Unschedulable bool `json:"unschedulable,omitempty"`
+		} `json:"spec"`
+	} `json:"items"`
 }
 
 func (ko KubeOutput) NodeCount() int {
 	resp := NodeResponse{}
 	json.Unmarshal(ko.RawOut, &resp)
-	return len(resp.Items)
+	count := 0
+	for _, item := range resp.Items {
+		if item.Spec.Unschedulable == false {
+			count++
+		}
+	}
+	return count
 }
 
 func (ko KubeOutput) NamespaceStatus() string {
