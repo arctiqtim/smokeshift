@@ -17,7 +17,7 @@ const (
 	runPrefix                = "kuberang-"
 	bbDeploymentName         = runPrefix + "busybox"
 	ngDeploymentName         = runPrefix + "nginx"
-	deploymentTimeoutSeconds = 300 //seconds
+	deploymentTimeoutSeconds = 300 * time.Second
 	httpTimeout              = 1000 * time.Millisecond
 )
 
@@ -250,7 +250,8 @@ func checkDeployments(busbyboxCount, nginxCount int64) bool {
 }
 
 func waitForDeployments(busbyboxCount, nginxCount int64) bool {
-	for i := 0; i < deploymentTimeoutSeconds; i++ {
+	start := time.Now()
+	for time.Since(start) < deploymentTimeoutSeconds {
 		if checkDeployments(busbyboxCount, nginxCount) {
 			util.PrettyPrintOk(os.Stdout, "Both deployments completed successfully within timeout")
 			return true
