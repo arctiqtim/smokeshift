@@ -38,6 +38,9 @@ func CheckKubernetes(outputFormat string) error {
 		!PrecheckServices(report, ngServiceName) ||
 		!PrecheckDeployments(report) {
 		PowerDown(report, ngServiceName)
+		if outputFormat == "json" {
+			printJSONReport(report)
+		}
 		return errors.New("Pre-conditions failed; must clean up before we can smoke test")
 	}
 
@@ -151,12 +154,9 @@ func CheckKubernetes(outputFormat string) error {
 	PowerDown(report, ngServiceName)
 
 	if outputFormat == "json" {
-		r := report.(*simpleReport)
-		b, err := json.MarshalIndent(r, "", "    ")
-		if err != nil {
-			return fmt.Errorf("error printing JSON report: %v", err)
+		if err := printJSONReport(report); err != nil {
+			return err
 		}
-		fmt.Printf("%s\n", string(b))
 	}
 
 	if report.isSuccess() {
@@ -259,4 +259,14 @@ func PowerDown(report report, nginxServiceName string) {
 
 func nginxServiceName() string {
 	return fmt.Sprintf("%s-%d", RunPrefix+"nginx", time.Now().UnixNano())
+}
+
+func printJSONReport(report report) error {
+	r := report.(*simpleReport)
+	b, err := json.MarshalIndent(r, "", "    ")
+	if err != nil {
+		return fmt.Errorf("error printing JSON report: %v", err)
+	}
+	fmt.Printf("%s\n", string(b))
+	return nil
 }
