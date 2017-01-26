@@ -7,7 +7,7 @@ import (
 
 func TestTimeout(t *testing.T) {
 	client := http.Client{
-		Timeout: httpTimeoutMillis,
+		Timeout: httpTimeout,
 	}
 	// Simulate a timeout using httpbin.org
 	if _, err := client.Get("http://httpbin.org/delay/2"); err == nil {
