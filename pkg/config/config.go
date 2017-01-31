@@ -1,5 +1,6 @@
 package config
 
 var (
-    Namespace string
+	Namespace   string
+	RegistryURL string
 )
