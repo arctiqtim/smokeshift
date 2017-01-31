@@ -33,10 +33,14 @@ func CheckKubernetes() error {
 	}
 
 	success := true
+	registryURL := ""
+	if config.RegistryURL != "" {
+		registryURL = config.RegistryURL + "/"
+	}
 
 	// Scale out busybox
 	busyboxCount := int64(1)
-	if ko := RunKubectl("run", bbDeploymentName, "--image=busybox", "--image-pull-policy=IfNotPresent", "--", "sleep", "3600"); !ko.Success {
+	if ko := RunKubectl("run", bbDeploymentName, fmt.Sprintf("--image=%sbusybox:latest", registryURL), "--image-pull-policy=IfNotPresent", "--", "sleep", "3600"); !ko.Success {
 		util.PrettyPrintErr(out, "Issued BusyBox start request")
 		printFailureDetail(out, ko.CombinedOut)
 		success = false
@@ -47,7 +51,7 @@ func CheckKubernetes() error {
 	// Try to run a Pod on each Node,
 	// This scheduling is not guaranteed but it gets close
 	nginxCount := int64(RunGetNodes().NodeCount())
-	if ko := RunPod(ngDeploymentName, "nginx", nginxCount); !ko.Success {
+	if ko := RunPod(ngDeploymentName, fmt.Sprintf("%snginx:stable-alpine", registryURL), nginxCount); !ko.Success {
 		util.PrettyPrintErr(out, "Issued Nginx start request")
 		printFailureDetail(out, ko.CombinedOut)
 		success = false

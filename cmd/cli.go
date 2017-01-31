@@ -20,8 +20,10 @@ func NewKuberangCommand(version string, in io.Reader, out io.Writer) *cobra.Comm
 		SilenceErrors: true,
 	}
 
-	cmd.PersistentFlags().StringVarP(&config.Namespace, "namespace", "n", "", 
+	cmd.PersistentFlags().StringVarP(&config.Namespace, "namespace", "n", "",
 		"Kubernetes namespace in which kuberang will operate. Defaults to 'default' if not specified.")
+	cmd.PersistentFlags().StringVar(&config.RegistryURL, "registry-url", "",
+		"Override the default Docker Hub URL to use a local offline registry for required Docker images.")
 
 	return cmd
 }
