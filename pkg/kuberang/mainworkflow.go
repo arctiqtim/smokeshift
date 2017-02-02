@@ -232,12 +232,12 @@ func precheckNamespace() bool {
 	return ret
 }
 
-func checkDeployments(busbyboxCount, nginxCount int64) bool {
+func checkDeployments(busyboxCount, nginxCount int64) bool {
 	ret := true
 	ko := RunGetDeployment(bbDeploymentName)
 	if !ko.Success {
 		ret = false
-	} else if ko.ObservedReplicaCount() != busbyboxCount {
+	} else if ko.ObservedReplicaCount() != busyboxCount {
 		ret = false
 	}
 	ko = RunGetDeployment(ngDeploymentName)
@@ -249,10 +249,10 @@ func checkDeployments(busbyboxCount, nginxCount int64) bool {
 	return ret
 }
 
-func waitForDeployments(busbyboxCount, nginxCount int64) bool {
+func waitForDeployments(busyboxCount, nginxCount int64) bool {
 	start := time.Now()
 	for time.Since(start) < deploymentTimeoutSeconds {
-		if checkDeployments(busbyboxCount, nginxCount) {
+		if checkDeployments(busyboxCount, nginxCount) {
 			util.PrettyPrintOk(os.Stdout, "Both deployments completed successfully within timeout")
 			return true
 		}
