@@ -21,7 +21,7 @@ const (
 	httpTimeout              = 1000 * time.Millisecond
 )
 
-func CheckKubernetes() error {
+func CheckKubernetes(skipCleanup bool) error {
 	out := os.Stdout
 	ngServiceName := nginxServiceName()
 	if !precheckKubectl() ||
@@ -163,7 +163,9 @@ func CheckKubernetes() error {
 		util.PrettyPrintErrorIgnored(out, "Accessed Google.com from this node")
 	}
 
-	powerDown(ngServiceName)
+	if !skipCleanup {
+		powerDown(ngServiceName)
+	}
 
 	if success {
 		return nil
