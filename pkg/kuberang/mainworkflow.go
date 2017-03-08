@@ -9,8 +9,8 @@ import (
 
 	"errors"
 
-	"github.com/cyberbliss/kuberang/pkg/config"
-	"github.com/cyberbliss/kuberang/pkg/util"
+	"github.com/cyberbliss/smokeshift/pkg/config"
+	"github.com/cyberbliss/smokeshift/pkg/util"
 )
 
 const (

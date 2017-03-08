@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strconv"
 
-	"github.com/cyberbliss/kuberang/pkg/config"
+	"github.com/cyberbliss/smokeshift/pkg/config"
 )
 
 type KubeOutput struct {

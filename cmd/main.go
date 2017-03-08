@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/cyberbliss/kuberang/pkg/util"
+	"github.com/cyberbliss/smokeshift/pkg/util"
 )
 
 // Set via linker flag
