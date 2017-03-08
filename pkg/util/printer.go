@@ -10,6 +10,7 @@ import (
 
 const (
 	noType          = ""
+	infoType	= "[INFO]"
 	okType          = "[OK]"
 	errType         = "[ERROR]"
 	skippedType     = "[SKIPPED]"
@@ -27,6 +28,12 @@ var Blue = color.New(color.FgCyan)
 func PrettyPrintOk(out io.Writer, msg string, a ...interface{}) {
 	print(out, msg, okType, a...)
 }
+
+//PrettyPrintInfo [INFO](Blue) with formatted string
+func PrettyPrintInfo(out io.Writer, msg string, a ...interface{}) {
+	print(out, msg, infoType, a...)
+}
+
 
 // PrettyPrintErr [ERROR](Red) with formatted string
 func PrettyPrintErr(out io.Writer, msg string, a ...interface{}) {
@@ -116,7 +123,7 @@ func print(out io.Writer, msg, status string, a ...interface{}) {
 			clr = Red
 		case warnType, errIgnoredType:
 			clr = Orange
-		case skippedType:
+		case skippedType, infoType:
 			clr = Blue
 		}
 

@@ -9,8 +9,8 @@ import (
 
 	"errors"
 
-	"github.com/apprenda/kuberang/pkg/config"
-	"github.com/apprenda/kuberang/pkg/util"
+	"github.com/cyberbliss/kuberang/pkg/config"
+	"github.com/cyberbliss/kuberang/pkg/util"
 )
 
 const (
@@ -89,6 +89,7 @@ func CheckKubernetes(skipCleanup bool) error {
 	// pods to talk to each other.
 	// 1. Access nginx service via service IP from another pod
 	var kubeOut KubeOutput
+	util.PrettyPrintInfo(out,"Trying to access Nginx service at "+serviceIP+" from BusyBox")
 	ok := retry(3, func() bool {
 		kubeOut = RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", serviceIP)
 		return kubeOut.Success
@@ -102,19 +103,23 @@ func CheckKubernetes(skipCleanup bool) error {
 	}
 
 	// 2. Access nginx service via service name (DNS) from another pod
+	// TODO this is a crude hack. Need to fix when create specific smokeshift namespace is added
+	nginxSvc := ngServiceName+".default"
+	util.PrettyPrintInfo(out, "Trying to access Nginx service via DNS "+nginxSvc+" from BusyBox")
 	ok = retry(3, func() bool {
-		kubeOut = RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", ngServiceName)
+		kubeOut = RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", nginxSvc)
 		return kubeOut.Success
 	})
 	if ok {
-		util.PrettyPrintOk(out, "Accessed Nginx service via DNS "+ngServiceName+" from BusyBox")
+		util.PrettyPrintOk(out, "Accessed Nginx service via DNS "+nginxSvc+" from BusyBox")
 	} else {
-		util.PrettyPrintErr(out, "Accessed Nginx service via DNS "+ngServiceName+" from BusyBox")
+		util.PrettyPrintErr(out, "Accessed Nginx service via DNS "+nginxSvc+" from BusyBox")
 		printFailureDetail(out, kubeOut.CombinedOut)
 		success = false
 	}
 
 	// 3. Access all nginx pods by IP
+	util.PrettyPrintInfo(out, "Trying to access all nginx pods by IP")
 	for _, podIP := range podIPs {
 		ok = retry(3, func() bool {
 			kubeOut = RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", podIP)
@@ -183,7 +188,7 @@ func deployTestWorkloads(registryURL string, out io.Writer, ngServiceName string
 	util.PrettyPrintOk(out, "Issued Nginx start request")
 
 	// Add service
-	if ko := RunKubectl("expose", "deployment", ngDeploymentName, "--name="+ngServiceName, "--port=80"); !ko.Success {
+	if ko := RunKubectl("expose", "dc", ngDeploymentName, "--name="+ngServiceName, "--port=80"); !ko.Success {
 		util.PrettyPrintErr(out, "Issued expose Nginx service request")
 		printFailureDetail(out, ko.CombinedOut)
 		return false
@@ -306,14 +311,14 @@ func powerDown(nginxServiceName string) {
 		printFailureDetail(os.Stdout, ko.CombinedOut)
 	}
 	// Power down bb
-	if ko := RunKubectl("delete", "deployments", bbDeploymentName); ko.Success {
+	if ko := RunKubectl("delete", "dc", bbDeploymentName); ko.Success {
 		util.PrettyPrintOk(os.Stdout, "Powered down Busybox deployment")
 	} else {
 		util.PrettyPrintErr(os.Stdout, "Powered down Busybox deployment")
 		printFailureDetail(os.Stdout, ko.CombinedOut)
 	}
 	// Power down nginx
-	if ko := RunKubectl("delete", "deployments", ngDeploymentName); ko.Success {
+	if ko := RunKubectl("delete", "dc", ngDeploymentName); ko.Success {
 		util.PrettyPrintOk(os.Stdout, "Powered down Nginx deployment")
 	} else {
 		util.PrettyPrintErr(os.Stdout, "Powered down Nginx deployment")

@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strconv"
 
-	"github.com/apprenda/kuberang/pkg/config"
+	"github.com/cyberbliss/kuberang/pkg/config"
 )
 
 type KubeOutput struct {
@@ -20,7 +20,8 @@ func RunKubectl(args ...string) KubeOutput {
 		args = append([]string{"--namespace=" + config.Namespace}, args...)
 	}
 
-	kubeCmd := exec.Command("kubectl", args...)
+	//kubeCmd := exec.Command("kubectl", args...)
+	kubeCmd := exec.Command("oc", args...)
 	bytes, err := kubeCmd.CombinedOutput()
 	if err != nil {
 		return KubeOutput{
@@ -45,7 +46,7 @@ func RunGetPodByImage(name string) KubeOutput {
 }
 
 func RunGetDeployment(name string) KubeOutput {
-	return RunKubectl("get", "deployment", name, "-o", "json")
+	return RunKubectl("get", "dc", name, "-o", "json")
 }
 
 func RunGetNamespace(name string) KubeOutput {
