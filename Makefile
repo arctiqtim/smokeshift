@@ -11,10 +11,14 @@ ifeq ($(origin GLIDE_GOOS), undefined)
 	GLIDE_GOOS := $(HOST_GOOS)
 endif
 
+travis-build: test
+	GOOS=darwin go build -o bin/smokeshift-darwin-amd64 -ldflags "-X main.version=$(VERSION)" ./cmd
+	GOOS=linux go build -o bin/smokeshift-linux-amd64 -ldflags "-X main.version=$(VERSION)" ./cmd
+
 build: vendor
-	go build -o bin/kuberang -ldflags "-X main.version=$(VERSION)" ./cmd
-	GOOS=darwin go build -o bin/darwin/$(HOST_GOARCH)/kuberang -ldflags "-X main.version=$(VERSION)" ./cmd
-	GOOS=linux go build -o bin/linux/$(HOST_GOARCH)/kuberang -ldflags "-X main.version=$(VERSION)" ./cmd
+	go build -o bin/smokeshift -ldflags "-X main.version=$(VERSION)" ./cmd
+	GOOS=darwin go build -o bin/smokeshift-darwin-amd64 -ldflags "-X main.version=$(VERSION)" ./cmd
+	GOOS=linux go build -o bin/smokeshift-linux-amd64 -ldflags "-X main.version=$(VERSION)" ./cmd
 
 clean:
 	rm -rf bin

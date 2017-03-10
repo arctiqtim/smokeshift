@@ -1,4 +1,4 @@
-package kuberang
+package smokeshift
 
 import (
 	"encoding/json"
@@ -6,61 +6,78 @@ import (
 	"os/exec"
 	"strconv"
 
-	"github.com/apprenda/kuberang/pkg/config"
+	"github.com/cyberbliss/smokeshift/pkg/config"
 )
 
-type KubeOutput struct {
+type OCOutput struct {
 	Success     bool
 	CombinedOut string
 	RawOut      []byte
 }
 
-func RunKubectl(args ...string) KubeOutput {
+func RunOCinNamespace(args ...string) OCOutput {
 	if config.Namespace != "" {
 		args = append([]string{"--namespace=" + config.Namespace}, args...)
 	}
 
-	kubeCmd := exec.Command("kubectl", args...)
-	bytes, err := kubeCmd.CombinedOutput()
+	return RunOC(args...)
+}
+
+func RunOC(args ...string) OCOutput {
+	OCCmd := exec.Command("oc", args...)
+	bytes, err := OCCmd.CombinedOutput()
 	if err != nil {
-		return KubeOutput{
+		return OCOutput{
 			Success:     false,
 			CombinedOut: string(bytes),
 			RawOut:      bytes,
 		}
 	}
-	return KubeOutput{
+	return OCOutput{
 		Success:     true,
 		CombinedOut: string(bytes),
 		RawOut:      bytes,
 	}
 }
 
-func RunGetService(svcName string) KubeOutput {
-	return RunKubectl("get", "service", svcName, "-o", "json")
+func RunGetService(svcName string) OCOutput {
+	return RunOCinNamespace("get", "service", svcName, "-o", "json")
 }
 
-func RunGetPodByImage(name string) KubeOutput {
-	return RunKubectl("get", "deployment", name, "-o", "json")
+func RunGetPodByImage(name string) OCOutput {
+	return RunOCinNamespace("get", "deployment", name, "-o", "json")
 }
 
-func RunGetDeployment(name string) KubeOutput {
-	return RunKubectl("get", "deployment", name, "-o", "json")
+func RunGetDeployment(name string) OCOutput {
+	return RunOCinNamespace("get", "dc", name, "-o", "json")
 }
 
-func RunGetNamespace(name string) KubeOutput {
-	return RunKubectl("get", "namespace", name, "-o", "json")
+func RunGetProject(name string) OCOutput {
+	return RunOCinNamespace("get", "project", name, "-o", "json")
 }
 
-func RunPod(name string, image string, count int64) KubeOutput {
-	return RunKubectl("run", name, "--image="+image, "--image-pull-policy=IfNotPresent", "--replicas="+strconv.FormatInt(count, 10), "-o", "json")
+func RunCreateProject(name string) OCOutput {
+	return RunOC("new-project", name, "--skip-config-write=true")
 }
 
-func RunGetNodes() KubeOutput {
-	return RunKubectl("get", "nodes", "-o", "json")
+func RunDeleteProject(name string) OCOutput {
+	return RunOC("delete", "project", name)
 }
 
-func (ko KubeOutput) ObservedReplicaCount() int64 {
+func RunEnablePolicy(args ...string) OCOutput {
+	args = append([]string{"adm", "policy"}, args...)
+	return RunOC(args...)
+}
+
+func RunPod(name string, image string, count int64) OCOutput {
+	return RunOCinNamespace("run", name, "--image="+image, "--image-pull-policy=IfNotPresent", "--replicas="+strconv.FormatInt(count, 10), "-o", "json")
+}
+
+func RunGetNodes() OCOutput {
+	return RunOCinNamespace("get", "nodes", "-o", "json")
+}
+
+func (ko OCOutput) ObservedReplicaCount() int64 {
 	resp := DeploymentResponse{}
 	json.Unmarshal(ko.RawOut, &resp)
 	return resp.Status.AvaiableReplicas
@@ -72,7 +89,7 @@ type DeploymentResponse struct {
 	} `json:"status"`
 }
 
-func (ko KubeOutput) ServiceCluserIP() string {
+func (ko OCOutput) ServiceCluserIP() string {
 	resp := ServiceResponse{}
 	json.Unmarshal(ko.RawOut, &resp)
 	return resp.Spec.ClusterIP
@@ -84,7 +101,7 @@ type ServiceResponse struct {
 	} `json:"spec"`
 }
 
-func (ko KubeOutput) PodIPs() []string {
+func (ko OCOutput) PodIPs() []string {
 	//In Scala, this code would be gorgeous. In Golang, it's a blood blister
 	resp := PodsResponse{}
 	if err := json.Unmarshal(ko.RawOut, &resp); err != nil {
@@ -97,7 +114,7 @@ func (ko KubeOutput) PodIPs() []string {
 	return podIPs
 }
 
-func (ko KubeOutput) FirstPodName() string {
+func (ko OCOutput) FirstPodName() string {
 	resp := PodsResponse{}
 	if err := json.Unmarshal(ko.RawOut, &resp); err != nil {
 		fmt.Println(err)
@@ -128,7 +145,7 @@ type NodeResponse struct {
 	} `json:"items"`
 }
 
-func (ko KubeOutput) NodeCount() int {
+func (ko OCOutput) NodeCount() int {
 	resp := NodeResponse{}
 	json.Unmarshal(ko.RawOut, &resp)
 	count := 0
@@ -140,7 +157,7 @@ func (ko KubeOutput) NodeCount() int {
 	return count
 }
 
-func (ko KubeOutput) NamespaceStatus() string {
+func (ko OCOutput) NamespaceStatus() string {
 	resp := NamespaceResponse{}
 	json.Unmarshal(ko.RawOut, &resp)
 	return resp.Status.Phase
