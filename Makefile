@@ -13,8 +13,8 @@ endif
 
 build: vendor
 	go build -o bin/smokeshift -ldflags "-X main.version=$(VERSION)" ./cmd
-	GOOS=darwin go build -o bin/darwin/$(HOST_GOARCH)/smokeshift -ldflags "-X main.version=$(VERSION)" ./cmd
-	GOOS=linux go build -o bin/linux/$(HOST_GOARCH)/smokeshift -ldflags "-X main.version=$(VERSION)" ./cmd
+	GOOS=darwin go build -o bin/smokeshift-darwin-amd64 -ldflags "-X main.version=$(VERSION)" ./cmd
+	GOOS=linux go build -o bin/smokeshift-linux-amd64 -ldflags "-X main.version=$(VERSION)" ./cmd
 
 clean:
 	rm -rf bin
