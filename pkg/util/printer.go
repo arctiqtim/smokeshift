@@ -107,7 +107,7 @@ func PrintColor(out io.Writer, clr *color.Color, msg string, a ...interface{}) {
 }
 
 func print(out io.Writer, msg, status string, a ...interface{}) {
-	w := tabwriter.NewWriter(out, 80, 0, 0, ' ', 0)
+	w := tabwriter.NewWriter(out, 100, 0, 0, ' ', 0)
 	// print message
 	format := msg + "\t"
 	fmt.Fprintf(w, format, a...)

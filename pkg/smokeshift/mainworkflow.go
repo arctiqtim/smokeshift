@@ -11,6 +11,7 @@ import (
 
 	"github.com/cyberbliss/smokeshift/pkg/config"
 	"github.com/cyberbliss/smokeshift/pkg/util"
+	"strings"
 )
 
 const (
@@ -40,6 +41,8 @@ func CheckOpenshift(skipCleanup bool) error {
 	if !skipCleanup {
 		defer powerDown(ngServiceName)
 	}
+
+	printUserDetail(out)
 
 	//Create a project in which to deploy the workloads for running the checks
 	if !initProject(out) {
@@ -246,6 +249,10 @@ func checkPreconditions(out io.Writer) bool {
 		return false // don't bother doing anything if oc isn't configured
 	}
 
+	if !precheckAuthenticated(out) {
+		return false
+	}
+
 	return ok
 }
 
@@ -254,6 +261,18 @@ func precheckOC(out io.Writer) bool {
 	if ko := RunOCinNamespace("version"); !ko.Success {
 		util.PrettyPrintErr(os.Stdout, progressMsg)
 		printFailureDetail(os.Stdout, ko.CombinedOut)
+		return false
+	}
+	util.PrettyPrintOk(out, progressMsg)
+	return true
+}
+
+func precheckAuthenticated(out io.Writer) bool {
+	progressMsg := "User authenticated to cluster"
+	ocOut := RunOCinNamespace("whoami")
+	if !ocOut.Success {
+		util.PrettyPrintErr(os.Stdout, progressMsg)
+		printFailureDetail(os.Stdout, ocOut.CombinedOut)
 		return false
 	}
 	util.PrettyPrintOk(out, progressMsg)
@@ -329,4 +348,12 @@ func printFailureDetail(out io.Writer, detail string) {
 	fmt.Fprintf(out, detail)
 	fmt.Fprintln(out, "------------------------")
 	fmt.Fprintln(out)
+}
+
+func printUserDetail(out io.Writer) {
+	ocOut := RunOCinNamespace("whoami")
+	user := strings.Replace(ocOut.CombinedOut, "\n", "", -1)
+	ocOut = RunOCinNamespace("whoami", "--show-server")
+	server := strings.Replace(ocOut.CombinedOut, "\n", "", -1)
+	util.PrettyPrintInfo(out, "Accessing "+ server + " as user "+user)
 }
