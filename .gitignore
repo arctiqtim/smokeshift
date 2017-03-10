@@ -13,5 +13,4 @@ tools
 *.swp
 
 vendor/*
-smokeshift-darwin-amd64
-smokeshift-linux-amd64
+

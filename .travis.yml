@@ -8,12 +8,13 @@ script:
 - make travis-build
 
 deploy:
+  skip_cleanup: true
   provider: releases
   api_key:
     secure: r+2uYRTvWRlL/hL55zZz+JUDa7TI32U2HggdTZIg0YVZpRvRmtBerpzxltsA7Ct697uqhXU5lR2vtHfxsethh4ADlf61/O5uCNoPqo+tmZGZVf8ltXYhP0OEVHf7xSuWWqYS0alhXxdUteQ0joiRm9o25LFZ9DeDRBm20aO+hbJhd8+1pNH7X+QRwQAgCp4xnBrm2ObNt8Fz/Ekfuy7SLTMM9kk61QPPIDFAE5Z2N2MLbPRZ3MPS6EyJggJTfdMDzPSXqQGw5j8Ol9bAL/hcJavMUgJdOa9QZE6e/K3IOPMYXSd3Kqq5eVq6Ll+OusMuR0ZWASfe4NtQHERZwVxvF6gU0Cl+B2QWdEOzlLiZ+l9sm+38bCLEPgUQq8VH0GKt3t9CQYscmxdyKetB/BidlMygZMs8ZY21xKVJUPBxk8dYuaTnQAokCcoafiXTytKs74AUV9nmT4fiS2gbALY1A4xPRxB2bRecladPcjk+NwzZ6P5i2b6pRaQJAiBIyzRpVW1UGGipOty0uUNtUc72ow8b73BcryauRiZaGPPWJ8aP01Lnjvctpa9iWuhmoZd2NTG/tK88Fqx5eOFqejZsjpnwkPvW8It89DMhjkeerI5oOx53awBPXp4ejVLQB7NZf9G+vEp3B61jKcPHXqyFyPR7PxwOaaI2DVUOk4GhcQY=
   file:
-    - smokeshift-darwin-amd64
-    - smokeshift-linux-amd64
+    - bin/smokeshift-darwin-amd64
+    - bin/smokeshift-linux-amd64
   on:
     repo: cyberbliss/smokeshift
     branch: openshift_conversion

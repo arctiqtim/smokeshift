@@ -12,8 +12,8 @@ ifeq ($(origin GLIDE_GOOS), undefined)
 endif
 
 travis-build: test
-	GOOS=darwin go build -o smokeshift-darwin-amd64 -ldflags "-X main.version=$(VERSION)" ./cmd
-	GOOS=linux go build -o smokeshift-linux-amd64 -ldflags "-X main.version=$(VERSION)" ./cmd
+	GOOS=darwin go build -o bin/smokeshift-darwin-amd64 -ldflags "-X main.version=$(VERSION)" ./cmd
+	GOOS=linux go build -o bin/smokeshift-linux-amd64 -ldflags "-X main.version=$(VERSION)" ./cmd
 
 build: vendor
 	go build -o bin/smokeshift -ldflags "-X main.version=$(VERSION)" ./cmd
