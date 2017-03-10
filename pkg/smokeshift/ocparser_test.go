@@ -1,10 +1,10 @@
-package kuberang
+package smokeshift
 
 import "testing"
 
 func TestNodeCount(t *testing.T) {
 
-	ko := KubeOutput{
+	ko := OCOutput{
 		Success:     true,
 		CombinedOut: SampleNodeRespones,
 		RawOut:      []byte(SampleNodeRespones),
@@ -450,7 +450,7 @@ const SampleNodeRespones = `
 `
 
 func TestNamespaceStatus(t *testing.T) {
-    ko := KubeOutput{
+    ko := OCOutput{
         Success:     true,
         CombinedOut: SampleNamespaceResponse,
         RawOut:      []byte(SampleNamespaceResponse),

@@ -12,9 +12,9 @@ ifeq ($(origin GLIDE_GOOS), undefined)
 endif
 
 build: vendor
-	go build -o bin/kuberang -ldflags "-X main.version=$(VERSION)" ./cmd
-	GOOS=darwin go build -o bin/darwin/$(HOST_GOARCH)/kuberang -ldflags "-X main.version=$(VERSION)" ./cmd
-	GOOS=linux go build -o bin/linux/$(HOST_GOARCH)/kuberang -ldflags "-X main.version=$(VERSION)" ./cmd
+	go build -o bin/smokeshift -ldflags "-X main.version=$(VERSION)" ./cmd
+	GOOS=darwin go build -o bin/darwin/$(HOST_GOARCH)/smokeshift -ldflags "-X main.version=$(VERSION)" ./cmd
+	GOOS=linux go build -o bin/linux/$(HOST_GOARCH)/smokeshift -ldflags "-X main.version=$(VERSION)" ./cmd
 
 clean:
 	rm -rf bin

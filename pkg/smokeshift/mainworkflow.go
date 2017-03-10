@@ -1,4 +1,4 @@
-package kuberang
+package smokeshift
 
 import (
 	"fmt"
@@ -14,16 +14,16 @@ import (
 )
 
 const (
-	runPrefix         = "kuberang-"
+	runPrefix         = "smokeshift-"
 	bbDeploymentName  = runPrefix + "busybox"
 	ngDeploymentName  = runPrefix + "nginx"
 	deploymentTimeout = 300 * time.Second
 	httpTimeout       = 1000 * time.Millisecond
 )
 
-// CheckKubernetes runs checks against a cluster. It expects to find
-// a configured `kubectl` binary in the path.
-func CheckKubernetes(skipCleanup bool) error {
+// CheckOpenshift runs checks against a cluster. It expects to find
+// a configured `oc` binary in the path.
+func CheckOpenshift(skipCleanup bool) error {
 	out := os.Stdout
 	ngServiceName := nginxServiceName()
 	success := true
@@ -33,13 +33,17 @@ func CheckKubernetes(skipCleanup bool) error {
 	}
 
 	// Make sure we have all we need
-	// Quit if we find existing kuberang deployments on the cluster
-	if !checkPreconditions(ngServiceName) {
+	if !checkPreconditions(out) {
 		return errors.New("Pre-conditions failed")
 	}
 
 	if !skipCleanup {
 		defer powerDown(ngServiceName)
+	}
+
+	//Create a project in which to deploy the workloads for running the checks
+	if !initProject(out) {
+		return errors.New("Failed to create Project: "+config.Namespace)
 	}
 
 	// Deploy the workloads required for running checks
@@ -49,7 +53,7 @@ func CheckKubernetes(skipCleanup bool) error {
 
 	// Get IPs of all nginx pods
 	podIPs := []string{}
-	if ko := RunKubectl("get", "pods", "-l", "run=kuberang-nginx", "-o", "json"); ko.Success {
+	if ko := RunOCinNamespace("get", "pods", "-l", "run=smokeshift-nginx", "-o", "json"); ko.Success {
 		podIPs = ko.PodIPs()
 		util.PrettyPrintOk(out, "Grab nginx pod ip addresses")
 	} else {
@@ -71,7 +75,7 @@ func CheckKubernetes(skipCleanup bool) error {
 
 	// Get the name of the busybox pod
 	var busyboxPodName string
-	if ko := RunKubectl("get", "pods", "-l", "run=kuberang-busybox", "-o", "json"); ko.Success {
+	if ko := RunOCinNamespace("get", "pods", "-l", "run=smokeshift-busybox", "-o", "json"); ko.Success {
 		busyboxPodName = ko.FirstPodName()
 		util.PrettyPrintOk(out, "Grab BusyBox pod name")
 	} else {
@@ -88,10 +92,10 @@ func CheckKubernetes(skipCleanup bool) error {
 	// The following checks verify the pod network and the ability for
 	// pods to talk to each other.
 	// 1. Access nginx service via service IP from another pod
-	var kubeOut KubeOutput
+	var kubeOut OCOutput
 	util.PrettyPrintInfo(out,"Trying to access Nginx service at "+serviceIP+" from BusyBox")
 	ok := retry(3, func() bool {
-		kubeOut = RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", serviceIP)
+		kubeOut = RunOCinNamespace("exec", busyboxPodName, "--", "wget", "-qO-", serviceIP)
 		return kubeOut.Success
 	})
 	if ok {
@@ -103,11 +107,11 @@ func CheckKubernetes(skipCleanup bool) error {
 	}
 
 	// 2. Access nginx service via service name (DNS) from another pod
-	// TODO this is a crude hack. Need to fix when create specific smokeshift namespace is added
-	nginxSvc := ngServiceName+".default"
+
+	nginxSvc := ngServiceName+"."+config.Namespace
 	util.PrettyPrintInfo(out, "Trying to access Nginx service via DNS "+nginxSvc+" from BusyBox")
 	ok = retry(3, func() bool {
-		kubeOut = RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", nginxSvc)
+		kubeOut = RunOCinNamespace("exec", busyboxPodName, "--", "wget", "-qO-", nginxSvc)
 		return kubeOut.Success
 	})
 	if ok {
@@ -122,7 +126,7 @@ func CheckKubernetes(skipCleanup bool) error {
 	util.PrettyPrintInfo(out, "Trying to access all nginx pods by IP")
 	for _, podIP := range podIPs {
 		ok = retry(3, func() bool {
-			kubeOut = RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", podIP)
+			kubeOut = RunOCinNamespace("exec", busyboxPodName, "--", "wget", "-qO-", podIP)
 			return kubeOut.Success
 		})
 		if ok {
@@ -135,7 +139,7 @@ func CheckKubernetes(skipCleanup bool) error {
 	}
 
 	// 4. Check internet connectivity from pod
-	if ko := RunKubectl("exec", busyboxPodName, "--", "wget", "-qO-", "Google.com"); busyboxPodName == "" || ko.Success {
+	if ko := RunOCinNamespace("exec", busyboxPodName, "--", "wget", "-qO-", "Google.com"); busyboxPodName == "" || ko.Success {
 		util.PrettyPrintOk(out, "Accessed Google.com from BusyBox")
 	} else {
 		util.PrettyPrintErrorIgnored(out, "Accessed Google.com from BusyBox")
@@ -169,7 +173,7 @@ func CheckKubernetes(skipCleanup bool) error {
 func deployTestWorkloads(registryURL string, out io.Writer, ngServiceName string) bool {
 	// Scale out busybox
 	busyboxCount := int64(1)
-	if ko := RunKubectl("run", bbDeploymentName, fmt.Sprintf("--image=%sbusybox:latest", registryURL), "--image-pull-policy=IfNotPresent", "--", "sleep", "3600"); !ko.Success {
+	if ko := RunOCinNamespace("run", bbDeploymentName, fmt.Sprintf("--image=%sbusybox:latest", registryURL), "--image-pull-policy=IfNotPresent", "--", "sleep", "3600"); !ko.Success {
 		util.PrettyPrintErr(out, "Issued BusyBox start request")
 		printFailureDetail(out, ko.CombinedOut)
 		return false
@@ -188,7 +192,7 @@ func deployTestWorkloads(registryURL string, out io.Writer, ngServiceName string
 	util.PrettyPrintOk(out, "Issued Nginx start request")
 
 	// Add service
-	if ko := RunKubectl("expose", "dc", ngDeploymentName, "--name="+ngServiceName, "--port=80"); !ko.Success {
+	if ko := RunOCinNamespace("expose", "dc", ngDeploymentName, "--name="+ngServiceName, "--port=80"); !ko.Success {
 		util.PrettyPrintErr(out, "Issued expose Nginx service request")
 		printFailureDetail(out, ko.CombinedOut)
 		return false
@@ -199,77 +203,61 @@ func deployTestWorkloads(registryURL string, out io.Writer, ngServiceName string
 	return waitForDeployments(busyboxCount, nginxCount)
 }
 
-func checkPreconditions(nginxServiceName string) bool {
+func initProject(out io.Writer) bool {
+	ocOut := RunGetProject(config.Namespace)
+	progressMsg := "Issued delete "+config.Namespace + " project request"
+	if ocOut.Success {
+		//smokeshift project exists so delete it
+		if ocDelOut := RunDeleteProject(config.Namespace); !ocDelOut.Success {
+			util.PrettyPrintErr(out, progressMsg)
+			printFailureDetail(out, ocDelOut.CombinedOut)
+			return false
+		}
+		util.PrettyPrintOk(out, progressMsg)
+	}
+
+	return createProject(out)
+}
+
+func createProject(out io.Writer) bool {
+	progressMsg := "Issued create "+config.Namespace + " project request"
+	if ocOut := RunCreateProject(config.Namespace); !ocOut.Success {
+		util.PrettyPrintErr(out, progressMsg)
+		printFailureDetail(out, ocOut.CombinedOut)
+		return false
+	}
+	util.PrettyPrintOk(out, progressMsg)
+
+	user := "system:serviceaccount:"+config.Namespace+":default"
+	progressMsg = "Enable containers with any user id to be launched in project "+config.Namespace
+	if ocOut := RunEnablePolicy("add-scc-to-user", "anyuid", user); !ocOut.Success {
+		util.PrettyPrintErr(out, progressMsg)
+		printFailureDetail(out, ocOut.CombinedOut)
+		return false
+	}
+	util.PrettyPrintOk(out, progressMsg)
+
+	return true
+}
+
+func checkPreconditions(out io.Writer) bool {
 	ok := true
-	if !precheckKubectl() {
-		return false // don't bother doing anything if kubectl isn't configured
+	if !precheckOC(out) {
+		return false // don't bother doing anything if oc isn't configured
 	}
-	if !precheckNamespace() {
-		ok = false
-	}
-	if !precheckServices(nginxServiceName) {
-		ok = false
-	}
-	if !precheckDeployments() {
-		ok = false
-	}
+
 	return ok
 }
 
-func precheckKubectl() bool {
-	if ko := RunKubectl("version"); !ko.Success {
-		util.PrettyPrintErr(os.Stdout, "Configured kubectl exists")
+func precheckOC(out io.Writer) bool {
+	progressMsg := "Configured OC CLI exists"
+	if ko := RunOCinNamespace("version"); !ko.Success {
+		util.PrettyPrintErr(os.Stdout, progressMsg)
 		printFailureDetail(os.Stdout, ko.CombinedOut)
 		return false
 	}
+	util.PrettyPrintOk(out, progressMsg)
 	return true
-}
-
-func precheckServices(nginxServiceName string) bool {
-	if ko := RunGetService(nginxServiceName); ko.Success {
-		util.PrettyPrintErr(os.Stdout, "Nginx service does not already exist")
-		printFailureDetail(os.Stdout, ko.CombinedOut)
-		return false
-	}
-	util.PrettyPrintOk(os.Stdout, "Nginx service does not already exist")
-	return true
-}
-
-func precheckDeployments() bool {
-	ret := true
-	if ko := RunGetDeployment(bbDeploymentName); ko.Success {
-		util.PrettyPrintErr(os.Stdout, "BusyBox service does not already exist")
-		printFailureDetail(os.Stdout, ko.CombinedOut)
-		ret = false
-	} else {
-		util.PrettyPrintOk(os.Stdout, "BusyBox service does not already exist")
-	}
-	if ko := RunGetDeployment(ngDeploymentName); ko.Success {
-		util.PrettyPrintErr(os.Stdout, "Nginx service does not already exist")
-		printFailureDetail(os.Stdout, ko.CombinedOut)
-		ret = false
-	} else {
-		util.PrettyPrintOk(os.Stdout, "Nginx service does not already exist")
-	}
-	return ret
-}
-
-func precheckNamespace() bool {
-	ret := true
-	if config.Namespace != "" {
-		ko := RunGetNamespace(config.Namespace)
-		if !ko.Success {
-			util.PrettyPrintErr(os.Stdout, "Configured kubernetes namespace `"+config.Namespace+"` exists")
-			printFailureDetail(os.Stdout, ko.CombinedOut)
-			ret = false
-		} else if ko.NamespaceStatus() != "Active" {
-			util.PrettyPrintErr(os.Stdout, "Configured kubernetes namespace `"+config.Namespace+"` exists")
-			ret = false
-		} else {
-			util.PrettyPrintOk(os.Stdout, "Configured kubernetes namespace `"+config.Namespace+"` exists")
-		}
-	}
-	return ret
 }
 
 func checkDeployments(busyboxCount, nginxCount int64) bool {
@@ -304,25 +292,31 @@ func waitForDeployments(busyboxCount, nginxCount int64) bool {
 
 func powerDown(nginxServiceName string) {
 	// Power down service
-	if ko := RunKubectl("delete", "service", nginxServiceName); ko.Success {
-		util.PrettyPrintOk(os.Stdout, "Powered down Nginx service")
-	} else {
-		util.PrettyPrintErr(os.Stdout, "Powered down Nginx service")
-		printFailureDetail(os.Stdout, ko.CombinedOut)
-	}
+	powerDownResource("Nginx service ("+nginxServiceName+")", "delete", "service", nginxServiceName)
+
 	// Power down bb
-	if ko := RunKubectl("delete", "dc", bbDeploymentName); ko.Success {
-		util.PrettyPrintOk(os.Stdout, "Powered down Busybox deployment")
-	} else {
-		util.PrettyPrintErr(os.Stdout, "Powered down Busybox deployment")
-		printFailureDetail(os.Stdout, ko.CombinedOut)
-	}
+	powerDownResource("Busybox deployment ("+bbDeploymentName+")", "delete", "dc", bbDeploymentName)
+
 	// Power down nginx
-	if ko := RunKubectl("delete", "dc", ngDeploymentName); ko.Success {
-		util.PrettyPrintOk(os.Stdout, "Powered down Nginx deployment")
+	powerDownResource("Nginx deployment ("+ ngDeploymentName + ")", "delete", "dc", ngDeploymentName)
+
+	//Remove Project
+	progressMsg := "Deleted "+config.Namespace + " project"
+	if ocOut := RunDeleteProject(config.Namespace); ocOut.Success {
+		util.PrettyPrintOk(os.Stdout, progressMsg)
 	} else {
-		util.PrettyPrintErr(os.Stdout, "Powered down Nginx deployment")
-		printFailureDetail(os.Stdout, ko.CombinedOut)
+		util.PrettyPrintErr(os.Stdout, progressMsg)
+		printFailureDetail(os.Stdout, ocOut.CombinedOut)
+	}
+}
+
+func powerDownResource (resourceName string, args ...string) {
+	progressMsg := "Powered down " + resourceName
+	if ocOut := RunOCinNamespace(args...); ocOut.Success {
+		util.PrettyPrintOk(os.Stdout, progressMsg)
+	} else {
+		util.PrettyPrintErr(os.Stdout, progressMsg)
+		printFailureDetail(os.Stdout, ocOut.CombinedOut)
 	}
 }
 

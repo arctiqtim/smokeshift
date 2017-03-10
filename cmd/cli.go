@@ -2,27 +2,27 @@ package main
 
 import (
 	"io"
-
 	"github.com/cyberbliss/smokeshift/pkg/config"
-	"github.com/cyberbliss/smokeshift/pkg/kuberang"
+	"github.com/cyberbliss/smokeshift/pkg/smokeshift"
 	"github.com/spf13/cobra"
+
 )
 
 // NewKismaticCommand creates the kismatic command
-func NewKuberangCommand(version string, in io.Reader, out io.Writer) *cobra.Command {
+func NewSmokeshiftCommand(version string, in io.Reader, out io.Writer) *cobra.Command {
 	var skipCleanup bool
 	cmd := &cobra.Command{
-		Use:   "kuberang",
-		Short: "kuberang tests your kubernetes cluster using kubectl",
+		Use:   "smokeshift",
+		Short: "smokeshift tests your kubernetes cluster using kubectl",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return doCheckKubernetes(skipCleanup)
+			return doCheckOpenshift(skipCleanup)
 		},
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
 
-	cmd.PersistentFlags().StringVarP(&config.Namespace, "namespace", "n", "",
-		"Kubernetes namespace in which kuberang will operate. Defaults to 'default' if not specified.")
+	config.Namespace = "smokeshift"
+
 	cmd.PersistentFlags().StringVar(&config.RegistryURL, "registry-url", "",
 		"Override the default Docker Hub URL to use a local offline registry for required Docker images.")
 	cmd.Flags().BoolVar(&skipCleanup, "skip-cleanup", false, "Don't clean up. Leave all deployed artifacts running on the cluster.")
@@ -30,6 +30,6 @@ func NewKuberangCommand(version string, in io.Reader, out io.Writer) *cobra.Comm
 	return cmd
 }
 
-func doCheckKubernetes(skipCleanup bool) error {
-	return kuberang.CheckKubernetes(skipCleanup)
+func doCheckOpenshift(skipCleanup bool) error {
+	return smokeshift.CheckOpenshift(skipCleanup)
 }
