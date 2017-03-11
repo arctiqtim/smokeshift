@@ -1,5 +1,5 @@
 # Smokeshift
-[![Build Status](https://travis-ci.org/cyberbliss/smokeshift.svg?branch=master)](https://travis-ci.org/cyberbliss/smokeshift)
+[![Build Status](https://travis-ci.org/opencredo/smokeshift.svg?branch=master)](https://travis-ci.org/opencredo/smokeshift)
 
 `smokeshift` is a command-line utility for smoke testing an Openshift install. It has been forked from Apprenda's Kismatic tool: [kuberang](https://github.com/apprenda/kuberang)
 
