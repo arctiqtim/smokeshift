@@ -17,5 +17,5 @@ deploy:
     - bin/smokeshift-darwin-amd64
     - bin/smokeshift-linux-amd64
   on:
-    repo: cyberbliss/smokeshift
+    repo: opencredo/smokeshift
     tags: true
