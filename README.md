@@ -1,10 +1,13 @@
 # Smokeshift
+[![Build Status](https://travis-ci.org/cyberbliss/smokeshift.svg?branch=master)](https://travis-ci.org/cyberbliss/smokeshift)
 
 `smokeshift` is a command-line utility for smoke testing an Openshift install. It has been forked from Apprenda's Kismatic tool: [kuberang](https://github.com/apprenda/kuberang)
 
 It scales out a pair of services, checks their connectivity, and then scales back in again.
 
 For the latest build check out the [release](https://github.com/cyberbliss/smokeshift/releases) page.
+
+![smokeshift_demo](https://cloud.githubusercontent.com/assets/5401528/23824487/9c2024ca-066f-11e7-978c-b9e370ac0b0d.gif)
 
 ### Features
 Smokeshift will tell you if the machine and account from which you run it:
