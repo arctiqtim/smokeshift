@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/cyberbliss/smokeshift/pkg/util"
+	"github.com/opencredo/smokeshift/pkg/util"
 )
 
 // Set via linker flag

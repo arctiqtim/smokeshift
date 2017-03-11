@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strconv"
 
-	"github.com/cyberbliss/smokeshift/pkg/config"
+	"github.com/opencredo/smokeshift/pkg/config"
 )
 
 type OCOutput struct {

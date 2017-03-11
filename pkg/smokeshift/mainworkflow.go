@@ -9,8 +9,8 @@ import (
 
 	"errors"
 
-	"github.com/cyberbliss/smokeshift/pkg/config"
-	"github.com/cyberbliss/smokeshift/pkg/util"
+	"github.com/opencredo/smokeshift/pkg/config"
+	"github.com/opencredo/smokeshift/pkg/util"
 	"strings"
 )
 

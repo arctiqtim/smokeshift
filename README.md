@@ -5,7 +5,7 @@
 
 It scales out a pair of services, checks their connectivity, and then scales back in again.
 
-For the latest build check out the [release](https://github.com/cyberbliss/smokeshift/releases) page.
+For the latest build check out the [release](https://github.com/opencredo/smokeshift/releases) page.
 
 ![smokeshift_demo](https://cloud.githubusercontent.com/assets/5401528/23824487/9c2024ca-066f-11e7-978c-b9e370ac0b0d.gif)
 

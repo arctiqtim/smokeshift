@@ -2,8 +2,8 @@ package main
 
 import (
 	"io"
-	"github.com/cyberbliss/smokeshift/pkg/config"
-	"github.com/cyberbliss/smokeshift/pkg/smokeshift"
+	"github.com/opencredo/smokeshift/pkg/config"
+	"github.com/opencredo/smokeshift/pkg/smokeshift"
 	"github.com/spf13/cobra"
 
 )
