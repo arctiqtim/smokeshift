@@ -176,10 +176,11 @@ func CheckOpenshift(skipCleanup bool) error {
 func deployTestWorkloads(registryURL string, out io.Writer, ngServiceName string) bool {
 	// Scale out busybox
 	busyboxCount := int64(1)
-	if ko := RunOCinNamespace("run", bbDeploymentName, fmt.Sprintf("--image=%sbusybox:latest", registryURL), "--image-pull-policy=IfNotPresent", "--", "sleep", "3600"); !ko.Success {
+	if ko := RunOCinNamespace("run", bbDeploymentName, fmt.Sprintf("--image=%sbusybox:1", registryURL), "--", "sleep", "3600"); !ko.Success {
 		util.PrettyPrintErr(out, "Issued BusyBox start request")
 		printFailureDetail(out, ko.CombinedOut)
 		return false
+
 	}
 	util.PrettyPrintOk(out, "Issued BusyBox start request")
 

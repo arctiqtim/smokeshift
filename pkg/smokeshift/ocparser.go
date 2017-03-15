@@ -70,7 +70,8 @@ func RunEnablePolicy(args ...string) OCOutput {
 }
 
 func RunPod(name string, image string, count int64) OCOutput {
-	return RunOCinNamespace("run", name, "--image="+image, "--image-pull-policy=IfNotPresent", "--replicas="+strconv.FormatInt(count, 10), "-o", "json")
+	//return RunOCinNamespace("run", name, "--image="+image, "--image-pull-policy=IfNotPresent", "--replicas="+strconv.FormatInt(count, 10), "-o", "json")
+	return RunOCinNamespace("run", name, "--image="+image, "--replicas="+strconv.FormatInt(count, 10), "-o", "json")
 }
 
 func RunGetNodes() OCOutput {
