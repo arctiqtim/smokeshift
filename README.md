@@ -25,7 +25,7 @@ Adding -o json will return a json blob (that can be parsed) instead of a pretty 
 It is recommended to run `smokeshift` from either outside the Openshift cluster or a Master within the cluster.
 
 ### Pre-requisites
-* A working oc (or all you'll get is a message complaining about oc)
+* A working oc CLI, version 1.4+ (or all you'll get is a message complaining about oc)
 * Access to a Docker registry with busybox and nginx images
 
 ### Usage
