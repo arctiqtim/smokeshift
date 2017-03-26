@@ -341,7 +341,7 @@ func powerDownResource (resourceName string, args ...string) {
 }
 
 func nginxServiceName() string {
-	return fmt.Sprintf("%s-%d", runPrefix+"nginx", time.Now().UnixNano())
+	return runPrefix+"nginx"
 }
 
 func printFailureDetail(out io.Writer, detail string) {
