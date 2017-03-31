@@ -111,7 +111,7 @@ func CheckOpenshift(skipCleanup bool) error {
 
 	// 2. Access nginx service via service name (DNS) from another pod
 
-	nginxSvc := ngServiceName+"."+config.Namespace
+	nginxSvc := ngServiceName
 	util.PrettyPrintInfo(out, "Trying to access Nginx service via DNS "+nginxSvc+" from BusyBox")
 	ok = retry(3, func() bool {
 		kubeOut = RunOCinNamespace("exec", busyboxPodName, "--", "wget", "-qO-", nginxSvc)
@@ -176,7 +176,7 @@ func CheckOpenshift(skipCleanup bool) error {
 func deployTestWorkloads(registryURL string, out io.Writer, ngServiceName string) bool {
 	// Scale out busybox
 	busyboxCount := int64(1)
-	if ko := RunOCinNamespace("run", bbDeploymentName, fmt.Sprintf("--image=%sbusybox:1", registryURL), "--", "sleep", "3600"); !ko.Success {
+	if ko := RunOCinNamespace("run", bbDeploymentName, fmt.Sprintf("--image=%salpine:3.5", registryURL), "--", "sleep", "3600"); !ko.Success {
 		util.PrettyPrintErr(out, "Issued BusyBox start request")
 		printFailureDetail(out, ko.CombinedOut)
 		return false
@@ -342,6 +342,10 @@ func powerDownResource (resourceName string, args ...string) {
 
 func nginxServiceName() string {
 	return runPrefix+"nginx"
+
+
+
+
 }
 
 func printFailureDetail(out io.Writer, detail string) {
